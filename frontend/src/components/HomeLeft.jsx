@@ -8,15 +8,19 @@ import Messages from "./Messages";
 import { SiGooglemessages } from "react-icons/si";
 import { GiThreeFriends } from "react-icons/gi";
 import { FaCodePullRequest } from "react-icons/fa6";
+import { IoIosNotifications } from "react-icons/io";
 
 import Groups from "./Groups";
 import AddUsers from "./AddUsers";
 import Friends from "./Friends";
 import { useNavigate } from "react-router-dom";
 import FriendRequests from "./FriendRequests";
+import Notifications from "./Notifications";
+import { useSelector } from "react-redux";
 
 function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
   const [selectTab, setSelectTab] = useState("messages");
+  const noties = useSelector((state) => state.user.notifications);
   const navigate = useNavigate();
   return (
     <div className="relative flex w-[40%] h-screen">
@@ -51,6 +55,19 @@ function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
             size={25}
             cursor={"pointer"}
           />
+          <div className=" flex items-center gap-0 flex-col">
+            <span className="text-[14px] text-red-700 font-semibold">
+              {noties.length}
+            </span>
+            <IoIosNotifications
+              title="add friend"
+              onClick={() => setSelectTab("noti")}
+              color={selectTab == "noti" ? "black" : "white"}
+              size={25}
+              cursor={"pointer"}
+              value={"helo"}
+            />
+          </div>
         </div>
 
         <div className="">
@@ -99,8 +116,10 @@ function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
           <AddUsers />
         ) : selectTab === "request" ? (
           <FriendRequests />
+        ) : selectTab === "noti" ? (
+          <Notifications />
         ) : (
-          ""
+          ""("")
         )}
       </div>
     </div>

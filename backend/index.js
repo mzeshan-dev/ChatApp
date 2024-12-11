@@ -9,6 +9,20 @@ const app = express();
 const PORT = 3003;
 import path from "path";
 const server = createServer(app);
+import userRouter from "./routes/user_route.js";
+import { registerUser } from "./socket_methods.js";
+import User from "./models/user_model.js";
+import { send } from "process";
+import Chats from "./models/chat_model.js";
+import chatRouter from "./routes/chat_route.js";
+import { timeStamp } from "console";
+import {
+  addToHash,
+  getFromHash,
+  getOnlineUser,
+  remOnlineUser,
+  setOnlineUsers,
+} from "./redis/redis_methods.js";
 const users = {};
 const io = new Server(server, {
   cors: {
@@ -29,27 +43,75 @@ app.use(express.static(path.join("public")));
 app.get("/", (req, res) => {
   res.send("hello");
 });
-
+const createRoomId = (senderId, receiverId) => {
+  const [firstId, secondId] = [senderId, receiverId].sort(); // Sort alphabetically
+  return `roomId:${firstId}-${secondId}`;
+};
 io.on("connection", (socket) => {
   console.log("user connected with id:", socket.id);
-  socket.on("register", async (email) => {
-    socket.email = email;
-    const key = `user:${email}`;
+  socket.on("register", async (data) => {
+    // socket.email = email;
+    const { userId } = data;
+
+    socket.userId = userId;
+    const key = `online users`;
     const value = socket.id;
-    await setOnlineUsers(key, value);
+    await setOnlineUsers({ key, userId, value });
+  });
+  socket.on("sendReq", async (data) => {
+    const { receiverId, senderId, username } = data;
+    console.log(receiverId);
+    const roomId = createRoomId(senderId, receiverId);
+    const onlineUser = await getOnlineUser({
+      key: "online users",
+      field: receiverId,
+    });
+    console.log("roomId: ", roomId);
+    socket.join(roomId);
+
+    if (onlineUser) {
+      socket
+        .to(onlineUser)
+        .emit("reqReceive", `${username} send you a friend request`);
+    }
+  });
+  console.log("Active rooms:", io.sockets.adapter.rooms);
+
+  socket.on("onReqAccpet", async (data) => {
+    const { senderId, receiverId, username } = data;
+    const roomId = createRoomId(senderId, receiverId);
+
+    const onlineUser = await getOnlineUser({
+      key: "online users",
+      field: senderId,
+    });
+
+    const createChat = await Chats.create({
+      roomId: roomId,
+      userIds: [senderId, receiverId],
+      messages: [],
+    });
+    console.log("roomId: ", roomId);
+
+    socket.join(roomId);
+    if (onlineUser) {
+      socket
+        .to(onlineUser)
+        .emit("notify", `${username} accpet your friend request`);
+    }
   });
   socket.on("disconnect", async () => {
-    const email = socket.email;
-    if (email) {
-      const key = `user:${email}`;
-      await remOnlineUser(key, socket.id);
+    const id = socket.userId;
+    if (id) {
+      const key = `online users`;
+      await remOnlineUser({ key, id });
     }
   });
 
   socket.on("sendMessage", async (data) => {
     try {
-      const { senderId, recieverId, message } = data;
-
+      const { senderId, recieverId, message, roomId } = data;
+      console.log(roomId);
       const sender = await User.findById(senderId);
       const reciever = await User.findById(recieverId);
 
@@ -67,100 +129,19 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const key = `user:${reciever.email}`;
-      const OnlineUsers = await getOnlineUsers(key);
-      console.log("online working");
-      let senderChat = await Chats.findOne({ userId: senderId });
-      let receiverChat = await Chats.findOne({ userId: recieverId });
-
-      const senderKey = `user:${sender.email}`;
-      const recieverKey = `user:${reciever.email}`;
-
-      if (!senderChat) {
-        senderChat = await Chats.create({
-          userId: senderId,
-          messages: [
-            {
-              senderName: sender.username,
-              senderId,
-              text: message,
-              status: "sent",
-            },
-          ],
-        });
-
-        await addToHash(senderKey, senderChat);
-      } else {
-        console.log("h");
-        const redisSenderChat = await getFromHash(senderKey);
-        senderChat =
-          redisSenderChat ||
-          (await Chats.findOneAndUpdate(
-            { userId: senderId },
-            {
-              $push: {
-                messages: {
-                  senderName: sender.username,
-                  senderId,
-                  text: message,
-                  status: "sent",
-                },
-              },
-            },
-            { new: true }
-          ));
-      }
-
-      if (!receiverChat) {
-        const createRecieverChat = await Chats.create({
-          userId: recieverId,
-          messages: [
-            {
-              senderName: sender.username,
-              senderId,
-              text: message,
-              status: "sent",
-            },
-          ],
-        });
-
-        await addToHash(recieverKey, createRecieverChat);
-      } else {
-        const redisReceiverChat = await getFromHash(recieverKey);
-        receiverChat =
-          redisReceiverChat ||
-          (await Chats.findOneAndUpdate(
-            { userId: recieverId },
-            {
-              $push: {
-                messages: {
-                  senderName: sender.username,
-                  senderId,
-                  text: message,
-                  status: "sent",
-                },
-              },
-            },
-            { new: true }
-          ));
-      }
-
-      if (!OnlineUsers) {
-        socket.emit("userNotConnected", "Receiver is not online");
+      const findRoom = await Chats.findOne({ roomId });
+      if (!findRoom) {
+        console.log("error chat not found");
+        socket.emit("errorChat", "Chat not found or no changes made");
         return;
       }
-      OnlineUsers.forEach((socketId) => {
-        console.log("messag sending", socketId);
-        io.to(socketId).emit("receiveMessage", {
-          text: message,
-          senderId,
-          senderName: sender.username,
-          status: "sent",
-        });
-      });
-      // Emit the new message to the receiver's socket
 
-      console.log("hel");
+      await Chats.findOneAndUpdate(
+        { roomId },
+        { $push: { messages: message } },
+        { new: true }
+      );
+      io.to(roomId).emit("receiveMessage", message);
     } catch (err) {
       console.error("Error in sendMessage:", err);
       socket.emit(
@@ -172,21 +153,6 @@ io.on("connection", (socket) => {
   socket.emit("test", "hello");
   //   socket.on("message", (data) => sendMessage(data, socket.id, io));
 });
-
-import userRouter from "./routes/user_route.js";
-import { registerUser } from "./socket_methods.js";
-import User from "./models/user_model.js";
-import { send } from "process";
-import Chats from "./models/chat_model.js";
-import chatRouter from "./routes/chat_route.js";
-import { timeStamp } from "console";
-import {
-  addToHash,
-  getFromHash,
-  getOnlineUsers,
-  remOnlineUser,
-  setOnlineUsers,
-} from "./redis/redis_methods.js";
 
 app.use("/auth/api", userRouter);
 app.use("/chat/api", chatRouter);

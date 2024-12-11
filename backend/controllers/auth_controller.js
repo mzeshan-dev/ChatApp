@@ -84,6 +84,7 @@ export const getCurrentUser = async (req, res) => {
 
   try {
     const findUser = await User.findById(id).select("-password");
+
     if (!findUser) {
       return res.status(400).json({ error: "user not found" });
     }
@@ -128,7 +129,7 @@ export const sendFriendReq = async (req, res) => {
     allRequests.push(senderId);
     await reciever.save();
 
-    res.json({ message: "request sent" });
+    res.json({ success: true, message: "request sent" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -147,6 +148,7 @@ export const acceptFriendRequest = async (req, res) => {
     if (!findReq) {
       session.abortTransaction();
       res.status(400).json("no such req exists");
+      return;
     }
     if (flag) {
       const reqUser = await User.findById(reqUserId);

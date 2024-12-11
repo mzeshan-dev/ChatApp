@@ -1,12 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
-import userSlice from "./features/userSlice.js";
-import chatSlice from "./features/chatSlice.js";
-import socketSlice from "./features/socketSlice.js";
+
+import userReducer from "./reducers/userReducer.js";
 const store = configureStore({
   reducer: {
-    user: userSlice,
-    chat: chatSlice,
-    sockt: socketSlice,
+    user: userReducer,
   },
 });
 

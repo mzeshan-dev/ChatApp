@@ -25,17 +25,22 @@ export const getFromHash = async (key) => {
     console.log("error fetching data from hash", error.message);
   }
 };
-export const setOnlineUsers = async (key, value) => {
+export const setOnlineUsers = async (data) => {
+  const { key, userId, value } = data;
   try {
-    const setUser = await redis.sAdd(key, value);
-    console.log("user added");
+    const onlineUsers = await redis.hSet(key, userId, value);
+    console.log(onlineUsers);
+    if (onlineUsers) {
+      console.log("user added");
+    }
   } catch (error) {
     console.log("error setting online user", error.message);
   }
 };
 
-export const remOnlineUser = async (key, value) => {
+export const remOnlineUser = async (data) => {
   try {
+    const { key, value } = data;
     await redis.sRem(key, value);
     console.log(`user  added : ${value}`);
   } catch (error) {
@@ -43,9 +48,12 @@ export const remOnlineUser = async (key, value) => {
   }
 };
 
-export const getOnlineUsers = async (key) => {
+export const getOnlineUser = async (data) => {
   try {
-    const members = await redis.sMembers(key);
+    const { key, field } = data;
+    console.log(key, field, "redis dta");
+    const members = await redis.hGet(key, field);
+    console.log(members);
     return members;
   } catch (error) {
     console.log("error fetching online users", error.message);

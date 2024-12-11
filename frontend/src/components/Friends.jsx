@@ -2,20 +2,23 @@ import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 
 function Friends({ setSelectChat, search }) {
-  const user = useSelector((state) => state.user);
+  const user = useSelector((state) => state.user.user);
   const users = useSelector((state) => state.user.allUsers);
   const friends = [];
-  const allFriends = user && user.user.data.user.friends;
-  const email = user && user.user.data.user.email;
+  const allFriends = user && user.friends;
+  console.log(user.friends);
 
-  for (let i = 0; i < users.length; i++) {
-    // Ensure allFriends[i] is an ID (not an object)
-    if (allFriends.includes(users[i]._id)) {
-      friends.push(users[i]);
+  const email = user && user.email;
+  if (allFriends) {
+    for (let i = 0; i < users.length; i++) {
+      // Ensure allFriends[i] is an ID (not an object)
+      if (allFriends.includes(users[i]._id)) {
+        friends.push(users[i]);
+      }
     }
   }
 
-  // useEffect(() => {
+  // useEffeconsct(() => {
   //   socket.on("connect", () => {
   //     console.log("Socket connected with ID:", socket.id);
   //   });
@@ -30,7 +33,7 @@ function Friends({ setSelectChat, search }) {
     console.log("e");
     setSelectChat(email);
   };
-  console.log(friends);
+  console.log(friends, "firnds");
   return (
     <div className="custom-scroll overflow-y-scroll h-[calc(100%-96px)]">
       {!search &&

@@ -15,9 +15,11 @@ export const getChats = async (req, res) => {
   }
 };
 
-export const getAllChats = async (req, res) => {
+export const getAllOfUserChats = async (req, res) => {
   try {
-    const allChats = await Chats.find();
+    const userId = req.user;
+    const allChats = await Chats.findOne({ userIds: { $in: [userId] } });
+
     res.json(allChats);
   } catch (error) {
     res.status(500).json(error.message);

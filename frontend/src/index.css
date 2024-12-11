@@ -18,3 +18,6 @@
 .custom-scroll::-webkit-scrollbar-track {
   background: #f1f1f1; /* Scrollbar track color */
 }
+.rgba {
+  background-color: rgba(0, 0, 0, 0.208);
+}

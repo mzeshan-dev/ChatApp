@@ -4,10 +4,12 @@ import jtw from "jsonwebtoken";
 
 const chatSchema = new mongoose.Schema(
   {
-    userId: {
+    roomId: {
       type: String,
       required: true,
+      uinque: true,
     },
+    userIds: [String],
     messages: [
       {
         text: { type: String, required: true },
@@ -24,9 +26,6 @@ const chatSchema = new mongoose.Schema(
         timeStamp: { type: Date, default: Date.now },
       },
     ],
-    avatar: {
-      type: String,
-    },
   },
   { timestamps: true }
 );

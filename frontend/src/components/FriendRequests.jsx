@@ -1,28 +1,30 @@
 import React from "react";
 import { IoMdAddCircle } from "react-icons/io";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useSocket } from "../../context/socketContext";
 
 function FriendRequests() {
   const user = useSelector((state) => state.user.user);
 
   const users = useSelector((state) => state.user.allUsers);
-  const requests = user.data.user.requests;
-  console.log(requests, "user");
+  const dispatch = useDispatch();
+  const requests = user && user.requests;
+  const socket = useSocket();
   const token = localStorage.getItem("token");
   const friendRequests = [];
   for (let i = 0; i < users.length; i++) {
     if (
       requests.includes(users[i]._id) &&
-      !user.data.user.friends.includes(users[i]._id)
+      !user.friends.includes(users[i]._id)
     ) {
       friendRequests.push(users[i]);
     }
   }
-  console.log(friendRequests);
+
   const responseRequest = async (reqUserId) => {
     console.log(reqUserId);
-    const userId = user.data.user._id;
-    console.log(friendRequests);
+    const userId = user && user._id;
+
     const reqId = requests.find((id) => id === reqUserId);
 
     if (!reqUserId || !reqId) {
@@ -32,7 +34,7 @@ function FriendRequests() {
     formData.append("reqId", reqId);
 
     formData.append("reqUserId", reqUserId);
-    formData.append("flag", true);
+    formData.append("flag", false);
     try {
       const res = await fetch(
         "http://192.168.18.132:3003/auth/api/accept_req",
@@ -47,7 +49,14 @@ function FriendRequests() {
       );
 
       const data = await res.json();
-      console.log(data);
+      if (data.success) {
+        socket.emit("onReqAccpet", {
+          senderId: reqId,
+          receiverId: userId,
+          username: user && user.username,
+        });
+        friendRequests.filter((id) => id !== reqId);
+      }
     } catch (error) {
       console.log(error.message);
     }

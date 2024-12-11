@@ -2,28 +2,29 @@ import React from "react";
 
 import { TiUserAdd } from "react-icons/ti";
 import { useSelector } from "react-redux";
+import { useSocket } from "../../context/socketContext";
 function AddUsers() {
   const users = useSelector((state) => state.user.allUsers);
   const user = useSelector((state) => state.user.user);
+  const socket = useSocket();
+  const requests = user && user.requests;
+  const friends = user && user.friends;
+  const senderId = user && user._id;
+  const username = user && user.username;
 
-  const requests = user.data.user.requests;
-  const friends = user.data.user.friends;
-
-  console.log(requests, "user");
   const token = localStorage.getItem("token");
   const usersToAdd = [];
   for (let i = 0; i < users.length; i++) {
     if (
       !requests.includes(users[i]._id) &&
-      !user.data.user.friends.includes(users[i]._id) &&
-      user.data.user._id !== users[i]._id
+      !user.friends.includes(users[i]._id) &&
+      user._id !== users[i]._id
     ) {
       usersToAdd.push(users[i]);
     }
   }
 
   const addFriend = async (receiverId) => {
-    console.log(receiverId);
     if (!receiverId) {
       return console.log("ids not found");
     }
@@ -42,6 +43,9 @@ function AddUsers() {
 
       const data = await res.json();
       console.log(data);
+      if (data.success && socket) {
+        socket.emit("sendReq", { senderId, receiverId, username });
+      }
     } catch (error) {
       console.log(error.message);
     }

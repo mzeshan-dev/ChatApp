@@ -5,45 +5,53 @@ import { useSocket } from "../../context/socketContext";
 
 function HomeRight({ chat, selectChat }) {
   const user = useSelector((state) => state.user.user);
-  const allChats = useSelector((state) => state.chat.allChats);
+  const allChats = useSelector((state) => state.user.allChats);
   const [chats, setChats] = useState(null);
-  const id = user && user.data.user._id;
-  const isocktId = user && user?.data.user.socketId;
+  const senderId = user && user._id;
+  const receiverId = chat._id;
   const socket = useSocket();
   const formData = new FormData();
   // const [userChats, setUserChats] = useState([]);
   formData.append("recieverId", chat._id);
-  formData.append("senderId", id);
+  formData.append("senderId", senderId);
   const [messageToSent, setMessageToSent] = useState("");
   const token = localStorage.getItem("token");
-  useEffect(() => {
-    socket.on("test", (data) => {
-      console.log(data);
-    });
-    socket.on("receiveMessage", (data) => {
-      console.log(data, "datas");
-    });
-  }, [messageToSent]);
+  const createRoomId = (senderId, receiverId) => {
+    const [firstId, secondId] = [senderId, receiverId].sort(); // Sort alphabetically
+    return `roomId:${firstId}-${secondId}`;
+  };
+  const roomId = createRoomId(senderId, receiverId);
 
   const sendMessage = async () => {
+    const message = {
+      text: messageToSent,
+      senderId: senderId,
+      senderName: user && user.username,
+    };
     if (messageToSent.trim()) {
       socket.emit("sendMessage", {
-        senderId: id,
+        senderId: senderId,
         recieverId: chat._id,
-        message: messageToSent,
+        message: message,
+        roomId: roomId,
       });
 
       setChats(
         (prev) =>
           prev && [
             ...prev,
-            { senderId: id, text: messageToSent, status: "sent" },
+            { senderId: senderId, text: messageToSent, status: "sent" },
           ]
       );
 
       setMessageToSent("");
     }
   };
+  useEffect(() => {
+    socket.on("receiveMessage", (data) => {
+      console.log(data, "message");
+    });
+  }, [messageToSent]);
 
   return (
     <div className=" w-full flex flex-col overflow-hidden h-screen justify-between">
