@@ -8,6 +8,9 @@ const initialState = {
   allUsers: [],
   notifications: [],
   allChats: [],
+  messages: [],
+  chatMessges: [],
+  chatMesgLoading: false,
 };
 
 const userReducer = createReducer(initialState, (builder) => {
@@ -57,6 +60,22 @@ const userReducer = createReducer(initialState, (builder) => {
     })
     .addCase("onNoti", (state, action) => {
       state.notifications.push(action.payload);
+    })
+    .addCase("loadingMessages", (state) => {
+      state.chatMesgLoading = true;
+    })
+    .addCase("messagessSuccess", (state, action) => {
+      state.chatMesgLoading = false;
+      state.error = null;
+      state.messages = action.payload;
+    })
+    .addCase("messagesFailiure", (state, action) => {
+      state.chatMesgLoading = false;
+      state.error = action.payload;
+      state.messages = null;
+    })
+    .addCase("chatMessages", (state, action) => {
+      state.messages.messgaesPaginated.push(action.payload);
     });
 });
 

@@ -85,7 +85,6 @@ export const getAllUser = () => async (dispatch) => {
       },
     });
     const data = await res.json();
-    console.log("user getiing in user action", data);
 
     dispatch({ type: "AllUserSuccess", payload: data });
   } catch (error) {
@@ -95,6 +94,9 @@ export const getAllUser = () => async (dispatch) => {
 };
 export const createNotifications = (noti) => async (dispatch) => {
   dispatch({ type: "onNoti", payload: noti });
+};
+export const chatMessages = (messages) => async (dispatch) => {
+  dispatch({ type: "chatMessages", payload: messages });
 };
 
 export const getAllChats = () => async (dispatch) => {
@@ -113,5 +115,28 @@ export const getAllChats = () => async (dispatch) => {
   } catch (error) {
     console.log(error.message, "err");
     dispatch({ type: "AllChatsFailiure", payload: error.message });
+  }
+};
+export const getAllMessages = (formData) => async (dispatch) => {
+  dispatch({ type: "loadingMessages" });
+
+  try {
+    const res = await fetch(
+      "http://192.168.18.132:3003/chat/api/all_messages",
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+    const data = await res.json();
+
+    dispatch({ type: "messagessSuccess", payload: data });
+  } catch (error) {
+    console.log(error.message, "err");
+    dispatch({ type: "messagesFailiure", payload: error.message });
   }
 };

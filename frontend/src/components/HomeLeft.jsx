@@ -19,7 +19,7 @@ import Notifications from "./Notifications";
 import { useSelector } from "react-redux";
 
 function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
-  const [selectTab, setSelectTab] = useState("messages");
+  const [selectTab, setSelectTab] = useState("friends");
   const noties = useSelector((state) => state.user.notifications);
   const navigate = useNavigate();
   return (
@@ -28,14 +28,20 @@ function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
         <div className=" flex flex-col gap-3">
           <SiGooglemessages
             title="friends"
-            onClick={() => setSelectTab("friends")}
+            onClick={() => {
+              setSelectTab("friends");
+              setSelectChat("");
+            }}
             color={selectTab == "friends" ? "black" : "white"}
             size={30}
             cursor={"pointer"}
           />
           <MdGroups
             title="groups"
-            onClick={() => setSelectTab("groups")}
+            onClick={() => {
+              setSelectTab("groups");
+              setSelectChat("");
+            }}
             color={selectTab == "groups" ? "black" : "white"}
             size={30}
             cursor={"pointer"}
@@ -43,14 +49,20 @@ function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
 
           <TiUserAdd
             title="add friend"
-            onClick={() => setSelectTab("add")}
+            onClick={() => {
+              setSelectTab("add");
+              setSelectChat("");
+            }}
             color={selectTab == "add" ? "black" : "white"}
             size={30}
             cursor={"pointer"}
           />
           <FaCodePullRequest
             title="add friend"
-            onClick={() => setSelectTab("request")}
+            onClick={() => {
+              setSelectTab("request");
+              setSelectChat("");
+            }}
             color={selectTab == "request" ? "black" : "white"}
             size={25}
             cursor={"pointer"}
@@ -61,7 +73,10 @@ function HomeLeft({ selectChat, setSelectChat, search, setSearch }) {
             </span>
             <IoIosNotifications
               title="add friend"
-              onClick={() => setSelectTab("noti")}
+              onClick={() => {
+                setSelectTab("noti");
+                setSelectChat("");
+              }}
               color={selectTab == "noti" ? "black" : "white"}
               size={25}
               cursor={"pointer"}

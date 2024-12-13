@@ -22,7 +22,6 @@ function FriendRequests() {
   }
 
   const responseRequest = async (reqUserId) => {
-    console.log(reqUserId);
     const userId = user && user._id;
 
     const reqId = requests.find((id) => id === reqUserId);

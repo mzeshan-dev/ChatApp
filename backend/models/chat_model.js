@@ -26,6 +26,10 @@ const chatSchema = new mongoose.Schema(
         timeStamp: { type: Date, default: Date.now },
       },
     ],
+    profileUrl: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

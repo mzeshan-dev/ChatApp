@@ -43,7 +43,7 @@ app.use(express.static(path.join("public")));
 app.get("/", (req, res) => {
   res.send("hello");
 });
-const createRoomId = (senderId, receiverId) => {
+export const createRoomId = (senderId, receiverId) => {
   const [firstId, secondId] = [senderId, receiverId].sort(); // Sort alphabetically
   return `roomId:${firstId}-${secondId}`;
 };
@@ -53,10 +53,27 @@ io.on("connection", (socket) => {
     // socket.email = email;
     const { userId } = data;
 
+    console.log(userId);
     socket.userId = userId;
     const key = `online users`;
     const value = socket.id;
     await setOnlineUsers({ key, userId, value });
+  });
+  socket.on("joinRoom", async (data) => {
+    const { senderId, receiverId } = data;
+    const roomId = createRoomId(senderId, receiverId);
+    if (!io.sockets.adapter.rooms.has(roomId)) {
+      socket.join(roomId);
+    }
+    const onlineUser = await getOnlineUser({
+      key: "online users",
+      field: receiverId,
+    });
+    if (onlineUser) {
+      socket.to(onlineUser).emit("roomJoined", "room have been joined");
+    }
+
+    socket.join(senderId);
   });
   socket.on("sendReq", async (data) => {
     const { receiverId, senderId, username } = data;
@@ -66,16 +83,16 @@ io.on("connection", (socket) => {
       key: "online users",
       field: receiverId,
     });
-    console.log("roomId: ", roomId);
     socket.join(roomId);
-
+    if (socket.rooms.has(roomId)) {
+      console.log("sender room joind");
+    }
     if (onlineUser) {
       socket
         .to(onlineUser)
         .emit("reqReceive", `${username} send you a friend request`);
     }
   });
-  console.log("Active rooms:", io.sockets.adapter.rooms);
 
   socket.on("onReqAccpet", async (data) => {
     const { senderId, receiverId, username } = data;
@@ -85,15 +102,21 @@ io.on("connection", (socket) => {
       key: "online users",
       field: senderId,
     });
-
+    socket.join(roomId);
+    if (socket.rooms.has(roomId)) {
+      console.log("recever jioin the room");
+    }
+    const sender = await User.findById(senderId);
+    if (!sender) {
+      return res.status(400).json("user not found");
+    }
     const createChat = await Chats.create({
       roomId: roomId,
+      profileUrl: sender.avatar,
       userIds: [senderId, receiverId],
       messages: [],
     });
-    console.log("roomId: ", roomId);
 
-    socket.join(roomId);
     if (onlineUser) {
       socket
         .to(onlineUser)
@@ -110,8 +133,8 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", async (data) => {
     try {
-      const { senderId, recieverId, message, roomId } = data;
-      console.log(roomId);
+      const { senderId, recieverId, message } = data;
+      const roomId = createRoomId(senderId, recieverId);
       const sender = await User.findById(senderId);
       const reciever = await User.findById(recieverId);
 
@@ -128,6 +151,9 @@ io.on("connection", (socket) => {
         socket.emit("notFriends", "not your friend");
         return;
       }
+      // if (!io.sockets.adapter.rooms.has(roomId)) {
+      //   socket.join(roomId);
+      // }
 
       const findRoom = await Chats.findOne({ roomId });
       if (!findRoom) {
@@ -139,9 +165,15 @@ io.on("connection", (socket) => {
       await Chats.findOneAndUpdate(
         { roomId },
         { $push: { messages: message } },
+
         { new: true }
       );
-      io.to(roomId).emit("receiveMessage", message);
+      const onlineReceiver = await getOnlineUser({
+        key: "online users",
+        field: recieverId,
+      });
+
+      io.to(onlineReceiver).emit("receiveMessage", message);
     } catch (err) {
       console.error("Error in sendMessage:", err);
       socket.emit(
@@ -150,7 +182,7 @@ io.on("connection", (socket) => {
       );
     }
   });
-  socket.emit("test", "hello");
+
   //   socket.on("message", (data) => sendMessage(data, socket.id, io));
 });
 

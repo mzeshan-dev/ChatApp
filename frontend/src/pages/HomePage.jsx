@@ -11,9 +11,6 @@ function cla() {
   const socket = useSelector((state) => state.socket);
   const dispatch = useDispatch();
   const chat = users && users.find((user) => user.email === selectChat);
-  useEffect(() => {
-    console.log(chat && chat);
-  }, []);
 
   // useEffect(() => {
   //   socket &&
@@ -43,7 +40,11 @@ function cla() {
         selectChat={selectChat}
       />
       {chat ? (
-        <HomeRight chat={chat} selectChat={selectChat} />
+        <HomeRight
+          chat={chat}
+          setSelectChat={setSelectChat}
+          selectChat={selectChat}
+        />
       ) : (
         <HomeRightNoChats />
       )}

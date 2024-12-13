@@ -40,8 +40,8 @@ export const setOnlineUsers = async (data) => {
 
 export const remOnlineUser = async (data) => {
   try {
-    const { key, value } = data;
-    await redis.sRem(key, value);
+    const { key, id } = data;
+    await redis.sRem(key, id);
     console.log(`user  added : ${value}`);
   } catch (error) {
     console.log("error removing online user", error.message);
@@ -53,7 +53,7 @@ export const getOnlineUser = async (data) => {
     const { key, field } = data;
     console.log(key, field, "redis dta");
     const members = await redis.hGet(key, field);
-    console.log(members);
+
     return members;
   } catch (error) {
     console.log("error fetching online users", error.message);

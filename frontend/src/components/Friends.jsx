@@ -4,10 +4,9 @@ import { useSelector } from "react-redux";
 function Friends({ setSelectChat, search }) {
   const user = useSelector((state) => state.user.user);
   const users = useSelector((state) => state.user.allUsers);
+  const chats = useSelector((state) => state.user.allChats);
   const friends = [];
   const allFriends = user && user.friends;
-  console.log(user.friends);
-
   const email = user && user.email;
   if (allFriends) {
     for (let i = 0; i < users.length; i++) {
@@ -30,10 +29,8 @@ function Friends({ setSelectChat, search }) {
   // }, []);
 
   const startChat = (email) => {
-    console.log("e");
     setSelectChat(email);
   };
-  console.log(friends, "firnds");
   return (
     <div className="custom-scroll overflow-y-scroll h-[calc(100%-96px)]">
       {!search &&

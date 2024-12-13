@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import { useDispatch, useSelector } from "react-redux";
 import Protected from "./components/Protected";
 import {
+  chatMessages,
   createNotifications,
   getAllChats,
   getAllUser,
@@ -22,49 +23,47 @@ function App() {
   const [count, setCount] = useState(0);
   const user = useSelector((state) => state.user.user);
   const allChats = useSelector((state) => state.user.allChats);
-
   const loading = useSelector((state) => state.user.loading);
-
   const id = user && user._id;
-  console.log(allChats);
+
   const dispatch = useDispatch();
   const socket = useSocket();
   const token = localStorage.getItem("token");
   useEffect(() => {
-    console.log("redering");
     dispatch(getAllUser());
     dispatch(getCurrentUser());
     dispatch(getAllChats());
+
     // dispatch(getAllChats());
     // dispatch(initializeSocket());
   }, []);
-  console.log(id);
+
   useEffect(() => {
+    if (!id) return;
     socket.on("connect", () => {
       console.log("user connected with id: ");
     });
-    if (id) {
-      socket.emit("register", { userId: id });
-    }
 
+    socket.emit("register", { userId: id });
+    socket.on("roomJoined", (data) => {});
     socket.on("reqReceive", (data) => {
-      console.log(data);
+      dispatch(getCurrentUser());
       dispatch(createNotifications(data));
     });
     socket.on("receiveMessage", (data) => {
-      console.log(data, "message");
+      dispatch(chatMessages(data));
     });
     socket.on("notify", (data) => {
-      console.log(data);
+      dispatch(getCurrentUser());
       dispatch(createNotifications(data));
     });
-  }, [id]);
+  }, [id, dispatch, socket]);
 
   return (
     <>
       {loading && (
         <div className=" rgba w-full h-screen  flex items-center justify-center">
-          <p className=" font-bold text-3xl ">Loading...</p>
+          <p className=" font-bold text-3xl text-purple-500">Loading...</p>
         </div>
       )}
       {!loading && (
@@ -85,5 +84,4 @@ function App() {
     </>
   );
 }
-
 export default App;
